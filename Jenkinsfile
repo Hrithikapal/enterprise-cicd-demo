@@ -1,5 +1,10 @@
+```groovy
 pipeline {
     agent any
+
+    environment {
+        DOCKER_IMAGE = 'hrithikapal456/enterprise-cicd-demo'
+    }
 
     stages {
 
@@ -28,18 +33,41 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 echo 'Building Docker image'
-                sh 'docker build -t enterprise-cicd-demo:latest .'
+                sh 'docker build -t $DOCKER_IMAGE:latest .'
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo 'Logging in to Docker Hub and pushing image'
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
+                        echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker push "$DOCKER_IMAGE:latest"
+                        docker logout
+                    '''
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'CI Pipeline completed successfully!'
+            echo 'CI/CD Pipeline completed successfully!'
         }
 
         failure {
-            echo 'CI Pipeline failed!'
+            echo 'CI/CD Pipeline failed!'
         }
     }
 }
+```
+
+   
