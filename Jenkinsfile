@@ -36,9 +36,9 @@ pipeline {
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Verify Docker Login') {
             steps {
-                echo 'Logging in to Docker Hub and pushing image'
+                echo 'Verifying Docker Hub credentials'
 
                 withCredentials([
                     usernamePassword(
@@ -49,6 +49,24 @@ pipeline {
                 ]) {
                     sh '''
                         echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                        docker info
+                    '''
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                echo 'Pushing Docker image to Docker Hub'
+
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USERNAME',
+                        passwordVariable: 'DOCKER_PASSWORD'
+                    )
+                ]) {
+                    sh '''
                         docker push "$DOCKER_IMAGE:latest"
                         docker logout
                     '''
